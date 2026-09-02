@@ -207,6 +207,3 @@ CertVault
 **Platform:** Flutter / Dart
 
 ````
-GitHub will render the three screenshots **directly on the README page**.
-
-**Do not upload the screenshots into the root again.** Your existing `screenshots` folder is exactly what these paths are referring to.
