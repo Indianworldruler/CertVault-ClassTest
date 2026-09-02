@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class CertificationTrackerItem {
   final String id;
@@ -7,8 +8,10 @@ class CertificationTrackerItem {
   final String issuer;
   final DateTime issueDate;
   final DateTime expiryDate;
-  final String? credentialUrl;
+  final String credentialId;
+  final String credentialUrl;
   final String renewalStatus;
+  final String notes;
 
   CertificationTrackerItem({
     required this.id,
@@ -16,8 +19,10 @@ class CertificationTrackerItem {
     required this.issuer,
     required this.issueDate,
     required this.expiryDate,
-    this.credentialUrl,
-    this.renewalStatus = 'Not Renewed',
+    required this.credentialId,
+    required this.credentialUrl,
+    required this.renewalStatus,
+    required this.notes,
   });
 }
 
@@ -26,36 +31,53 @@ class CertificationNotifier
   CertificationNotifier()
       : super([
           CertificationTrackerItem(
-            id: 'aws-1',
-            title: 'AWS Solutions Architect\nAssociate',
-            issuer: 'Amazon Web Services',
+            id: '1',
+            title: 'AWS Solutions Architect Associate',
+            issuer: 'AWS',
             issueDate: DateTime(2024, 1, 15),
             expiryDate: DateTime(2027, 1, 15),
-            credentialUrl: 'AWS-ASA-123456',
+            credentialId: 'AWS-ASA-123456',
+            credentialUrl: '',
             renewalStatus: 'Active',
+            notes: '',
           ),
           CertificationTrackerItem(
-            id: 'google-1',
-            title: 'Google Cloud Professional\nCloud Developer',
+            id: '2',
+            title: 'Google Cloud Professional Cloud Developer',
             issuer: 'Google Cloud',
             issueDate: DateTime(2024, 3, 10),
             expiryDate: DateTime(2026, 3, 10),
-            credentialUrl: 'GCP-123456',
+            credentialId: 'GCP-123456',
+            credentialUrl: '',
             renewalStatus: 'Expiring Soon',
+            notes: '',
           ),
           CertificationTrackerItem(
-            id: 'azure-1',
-            title: 'Azure Administrator\nAssociate',
+            id: '3',
+            title: 'Azure Administrator Associate',
             issuer: 'Microsoft',
-            issueDate: DateTime(2023, 2, 5),
-            expiryDate: DateTime(2025, 2, 5),
-            credentialUrl: 'AZ-104-123456',
-            renewalStatus: 'Expired',
+            issueDate: DateTime(2024, 2, 5),
+            expiryDate: DateTime(2027, 2, 5),
+            credentialId: 'AZ-104-123456',
+            credentialUrl: '',
+            renewalStatus: 'Active',
+            notes: '',
+          ),
+          CertificationTrackerItem(
+            id: '4',
+            title: 'Google Data Analytics Professional Certificate',
+            issuer: 'Google',
+            issueDate: DateTime(2024, 5, 20),
+            expiryDate: DateTime(2026, 5, 20),
+            credentialId: 'GDA-789456',
+            credentialUrl: '',
+            renewalStatus: 'Active',
+            notes: '',
           ),
         ]);
 
-  void addCertification(CertificationTrackerItem item) {
-    state = [...state, item];
+  void addCertification(CertificationTrackerItem certification) {
+    state = [...state, certification];
   }
 }
 
@@ -65,27 +87,9 @@ final certificationProvider = StateNotifierProvider<CertificationNotifier,
 );
 
 String formatDate(DateTime date) {
-  return '${date.day.toString().padLeft(2, '0')} '
-      '${_month(date.month)} ${date.year}';
-}
-
-String _month(int month) {
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec'
-  ];
-
-  return months[month - 1];
+  return '${date.day.toString().padLeft(2, '0')}/'
+      '${date.month.toString().padLeft(2, '0')}/'
+      '${date.year}';
 }
 
 class HomeScreen extends ConsumerWidget {
@@ -96,154 +100,204 @@ class HomeScreen extends ConsumerWidget {
     final certifications = ref.watch(certificationProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xfff5f5f5),
       appBar: AppBar(
-        backgroundColor: const Color(0xff2864d7),
-        foregroundColor: Colors.white,
-        elevation: 0,
         title: const Text(
           'CertVault',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 18,
           ),
         ),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
-            onPressed: () {},
+            onPressed: () {
+              showSearch(
+                context: context,
+                delegate: CertificationSearchDelegate(certifications),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.filter_list),
-            onPressed: () {},
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Filter options coming soon.'),
+                ),
+              );
+            },
           ),
         ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(8, 8, 8, 90),
-        itemCount: certifications.length,
-        itemBuilder: (context, index) {
-          final item = certifications[index];
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: NetworkImage(
+              'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80',
+            ),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.white.withValues(alpha: 0.88),
+                Colors.blue.withValues(alpha: 0.15),
+              ],
+            ),
+          ),
+          child: certifications.isEmpty
+              ? const Center(
+                  child: Text(
+                    'No certifications added yet.',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
+                  itemCount: certifications.length,
+                  itemBuilder: (context, index) {
+                    final certification = certifications[index];
 
-          return _CertificationCard(
-            item: item,
-            onTap: () {
-              Navigator.of(context).pushNamed(
-                '/details/${item.id}',
-              );
-            },
-          );
-        },
+                    return CertificationCard(
+                      certification: certification,
+                    );
+                  },
+                ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xff2864d7),
+        onPressed: () => context.go('/add'),
+        backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
-        shape: const CircleBorder(),
-        onPressed: () {
-          Navigator.of(context).pushNamed('/add');
-        },
-        child: const Icon(Icons.add, size: 30),
+        child: const Icon(Icons.add),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
-        selectedItemColor: const Color(0xff2864d7),
-        unselectedItemColor: Colors.black87,
-        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
+            icon: Icon(Icons.home),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
+            icon: Icon(Icons.info_outline),
             label: 'About',
           ),
         ],
+        onTap: (index) {
+          if (index == 1) {
+            showDialog(
+              context: context,
+              builder: (context) {
+                return AlertDialog(
+                  title: const Text('About CertVault'),
+                  content: const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Student Details',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Text('Name: Parth Sahani'),
+                      Text('Roll Number: 150096724135'),
+                      Text('Cohort: Elon Musk'),
+                      SizedBox(height: 15),
+                      Text(
+                        'CertVault helps you manage and track '
+                        'your professional certifications.',
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close'),
+                    ),
+                  ],
+                );
+              },
+            );
+          }
+        },
       ),
     );
   }
 }
 
-class _CertificationCard extends StatelessWidget {
-  final CertificationTrackerItem item;
-  final VoidCallback onTap;
+class CertificationCard extends StatelessWidget {
+  final CertificationTrackerItem certification;
 
-  const _CertificationCard({
-    required this.item,
-    required this.onTap,
+  const CertificationCard({
+    super.key,
+    required this.certification,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 14),
+      elevation: 5,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(6),
-        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        onTap: () {
+          context.go('/details/${certification.id}');
+        },
         child: Padding(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(16),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _IssuerLogo(issuer: item.issuer),
+              IssuerLogo(issuer: certification.issuer),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item.title,
+                      certification.title,
                       style: const TextStyle(
-                        fontSize: 15,
+                        fontSize: 17,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     Text(
-                      item.issuer,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Colors.black87,
+                      certification.issuer,
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.calendar_month_outlined,
-                          size: 13,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Issued: ${formatDate(item.issueDate)}',
-                          style: const TextStyle(fontSize: 10),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.event_outlined,
-                          size: 13,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Expires: ${formatDate(item.expiryDate)}',
-                          style: const TextStyle(fontSize: 10),
-                        ),
-                      ],
+                    const SizedBox(height: 7),
+                    Text(
+                      'Expires: ${formatDate(certification.expiryDate)}',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 5),
-              _StatusChip(status: item.renewalStatus),
+              StatusChip(
+                status: certification.renewalStatus,
+              ),
             ],
           ),
         ),
@@ -252,112 +306,150 @@ class _CertificationCard extends StatelessWidget {
   }
 }
 
-class _IssuerLogo extends StatelessWidget {
+class IssuerLogo extends StatelessWidget {
   final String issuer;
 
-  const _IssuerLogo({required this.issuer});
+  const IssuerLogo({
+    super.key,
+    required this.issuer,
+  });
 
   @override
   Widget build(BuildContext context) {
-    if (issuer.contains('Amazon')) {
-      return Container(
-        width: 56,
-        height: 46,
-        decoration: const BoxDecoration(
-          color: Color(0xff2864d7),
-          shape: BoxShape.circle,
-        ),
-        child: const Center(
-          child: Text(
-            'AWS',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-            ),
-          ),
-        ),
-      );
+    IconData icon = Icons.workspace_premium;
+
+    if (issuer == 'AWS') {
+      icon = Icons.cloud;
+    } else if (issuer == 'Google Cloud') {
+      icon = Icons.cloud_queue;
+    } else if (issuer == 'Microsoft') {
+      icon = Icons.window;
+    } else if (issuer == 'Google') {
+      icon = Icons.language;
     }
 
-    if (issuer.contains('Google')) {
-      return SizedBox(
-        width: 56,
-        height: 46,
-        child: Center(
-          child: Icon(
-            Icons.cloud,
-            size: 42,
-            color: Colors.blue,
-          ),
-        ),
-      );
-    }
-
-    return SizedBox(
-      width: 56,
-      height: 46,
-      child: GridView.count(
-        crossAxisCount: 2,
-        mainAxisSpacing: 2,
-        crossAxisSpacing: 2,
-        padding: const EdgeInsets.all(7),
-        physics: const NeverScrollableScrollPhysics(),
-        children: const [
-          ColoredBox(color: Color(0xfff25022)),
-          ColoredBox(color: Color(0xff7fba00)),
-          ColoredBox(color: Color(0xff00a4ef)),
-          ColoredBox(color: Color(0xffffb900)),
-        ],
+    return Container(
+      width: 54,
+      height: 54,
+      decoration: BoxDecoration(
+        color: Colors.blue.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Icon(
+        icon,
+        color: Colors.blue,
+        size: 30,
       ),
     );
   }
 }
 
-class _StatusChip extends StatelessWidget {
+class StatusChip extends StatelessWidget {
   final String status;
 
-  const _StatusChip({required this.status});
+  const StatusChip({
+    super.key,
+    required this.status,
+  });
 
   @override
   Widget build(BuildContext context) {
-    Color background;
-    Color foreground;
-
-    switch (status) {
-      case 'Active':
-        background = const Color(0xffdff5df);
-        foreground = const Color(0xff25852b);
-        break;
-      case 'Expiring Soon':
-        background = const Color(0xffffedc8);
-        foreground = const Color(0xffb66b00);
-        break;
-      default:
-        background = const Color(0xffffdddd);
-        foreground = const Color(0xffc53b3b);
-    }
-
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: 9,
-        vertical: 4,
+        vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: background,
+        color: status == 'Active'
+            ? Colors.green.withValues(alpha: 0.15)
+            : status == 'Expiring Soon'
+                ? Colors.orange.withValues(alpha: 0.18)
+                : Colors.red.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: foreground.withOpacity(.25),
-        ),
       ),
       child: Text(
         status,
         style: TextStyle(
-          color: foreground,
-          fontSize: 9,
-          fontWeight: FontWeight.w600,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: status == 'Active'
+              ? Colors.green.shade700
+              : status == 'Expiring Soon'
+                  ? Colors.orange.shade800
+                  : Colors.red.shade700,
         ),
       ),
+    );
+  }
+}
+
+class CertificationSearchDelegate
+    extends SearchDelegate<CertificationTrackerItem?> {
+  final List<CertificationTrackerItem> certifications;
+
+  CertificationSearchDelegate(this.certifications);
+
+  @override
+  List<Widget>? buildActions(BuildContext context) {
+    return [
+      if (query.isNotEmpty)
+        IconButton(
+          icon: const Icon(Icons.clear),
+          onPressed: () {
+            query = '';
+          },
+        ),
+    ];
+  }
+
+  @override
+  Widget? buildLeading(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () {
+        close(context, null);
+      },
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    return _buildSearchResults(context);
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    return _buildSearchResults(context);
+  }
+
+  Widget _buildSearchResults(BuildContext context) {
+    final results = certifications.where((certification) {
+      return certification.title
+          .toLowerCase()
+          .contains(query.toLowerCase());
+    }).toList();
+
+    if (results.isEmpty) {
+      return const Center(
+        child: Text('No certification found.'),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: results.length,
+      itemBuilder: (context, index) {
+        final certification = results[index];
+
+        return ListTile(
+          leading: const Icon(Icons.workspace_premium),
+          title: Text(certification.title),
+          subtitle: Text(certification.issuer),
+          onTap: () {
+            close(context, certification);
+            context.go('/details/${certification.id}');
+          },
+        );
+      },
     );
   }
 }
