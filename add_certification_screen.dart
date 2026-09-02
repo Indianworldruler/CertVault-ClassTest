@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
 import 'home_screen.dart';
 
 class AddCertificationScreen extends ConsumerStatefulWidget {
@@ -33,7 +35,9 @@ class _AddCertificationScreenState
       lastDate: DateTime(2100),
     );
 
-    if (selectedDate == null) return;
+    if (selectedDate == null) {
+      return;
+    }
 
     setState(() {
       if (isIssueDate) {
@@ -52,27 +56,31 @@ class _AddCertificationScreenState
     if (_issueDate == null || _expiryDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select issue and expiry dates'),
+          content: Text(
+            'Please select issue and expiry dates',
+          ),
         ),
       );
       return;
     }
 
-    ref.read(certificationProvider.notifier).addCertification(
-          CertificationTrackerItem(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            title: _titleController.text,
-            issuer: _issuer ?? 'Unknown',
-            issueDate: _issueDate!,
-            expiryDate: _expiryDate!,
-            credentialUrl: _credentialController.text.isEmpty
-                ? null
-                : _credentialController.text,
-            renewalStatus: _renewalStatus,
-          ),
-        );
+    final certification = CertificationTrackerItem(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: _titleController.text.trim(),
+      issuer: _issuer!,
+      issueDate: _issueDate!,
+      expiryDate: _expiryDate!,
+      credentialUrl: _credentialController.text.trim().isEmpty
+          ? null
+          : _credentialController.text.trim(),
+      renewalStatus: _renewalStatus,
+    );
 
-    Navigator.of(context).pop();
+    ref
+        .read(certificationProvider.notifier)
+        .addCertification(certification);
+
+    context.go('/');
   }
 
   @override
@@ -92,7 +100,9 @@ class _AddCertificationScreenState
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            context.go('/');
+          },
         ),
         title: const Text(
           'Add Certification',
@@ -109,22 +119,30 @@ class _AddCertificationScreenState
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(14, 10, 14, 25),
+        padding: const EdgeInsets.fromLTRB(
+          14,
+          10,
+          14,
+          25,
+        ),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _fieldLabel('Certification Title *'),
+
               TextFormField(
                 controller: _titleController,
                 decoration: _inputDecoration(
                   'Enter certification title',
                 ),
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
+                  if (value == null ||
+                      value.trim().isEmpty) {
                     return 'Certification title is required';
                   }
+
                   return null;
                 },
               ),
@@ -132,8 +150,9 @@ class _AddCertificationScreenState
               const SizedBox(height: 13),
 
               _fieldLabel('Issuing Body *'),
+
               DropdownButtonFormField<String>(
-                value: _issuer,
+                initialValue: _issuer,
                 decoration: _inputDecoration(
                   'Enter issuing body (e.g. AWS, Google)',
                 ),
@@ -164,6 +183,7 @@ class _AddCertificationScreenState
                   if (value == null || value.isEmpty) {
                     return 'Issuing body is required';
                   }
+
                   return null;
                 },
               ),
@@ -171,24 +191,29 @@ class _AddCertificationScreenState
               const SizedBox(height: 13),
 
               _fieldLabel('Issue Date *'),
-              _DateField(
+
+              DateField(
                 date: _issueDate,
-                hint: 'dd/mm/yyyy',
-                onTap: () => _selectDate(isIssueDate: true),
+                onTap: () {
+                  _selectDate(isIssueDate: true);
+                },
               ),
 
               const SizedBox(height: 13),
 
               _fieldLabel('Expiry Date *'),
-              _DateField(
+
+              DateField(
                 date: _expiryDate,
-                hint: 'dd/mm/yyyy',
-                onTap: () => _selectDate(isIssueDate: false),
+                onTap: () {
+                  _selectDate(isIssueDate: false);
+                },
               ),
 
               const SizedBox(height: 13),
 
               _fieldLabel('Credential ID / URL'),
+
               TextFormField(
                 controller: _credentialController,
                 decoration: _inputDecoration(
@@ -199,8 +224,9 @@ class _AddCertificationScreenState
               const SizedBox(height: 13),
 
               _fieldLabel('Renewal Status'),
+
               DropdownButtonFormField<String>(
-                value: _renewalStatus,
+                initialValue: _renewalStatus,
                 decoration: _inputDecoration(''),
                 items: const [
                   DropdownMenuItem(
@@ -222,7 +248,8 @@ class _AddCertificationScreenState
                 ],
                 onChanged: (value) {
                   setState(() {
-                    _renewalStatus = value ?? 'Not Renewed';
+                    _renewalStatus =
+                        value ?? 'Not Renewed';
                   });
                 },
               ),
@@ -234,10 +261,12 @@ class _AddCertificationScreenState
                 height: 42,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xff45a64d),
+                    backgroundColor:
+                        const Color(0xff45a64d),
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
+                      borderRadius:
+                          BorderRadius.circular(5),
                     ),
                   ),
                   onPressed: _saveCertification,
@@ -298,14 +327,13 @@ class _AddCertificationScreenState
   }
 }
 
-class _DateField extends StatelessWidget {
+class DateField extends StatelessWidget {
   final DateTime? date;
-  final String hint;
   final VoidCallback onTap;
 
-  const _DateField({
+  const DateField({
+    super.key,
     required this.date,
-    required this.hint,
     required this.onTap,
   });
 
@@ -315,7 +343,7 @@ class _DateField extends StatelessWidget {
       onTap: onTap,
       child: InputDecorator(
         decoration: InputDecoration(
-          hintText: hint,
+          hintText: 'dd/mm/yyyy',
           hintStyle: const TextStyle(
             fontSize: 10,
             color: Colors.grey,
@@ -344,10 +372,14 @@ class _DateField extends StatelessWidget {
           ),
         ),
         child: Text(
-          date == null ? hint : formatDate(date!),
+          date == null
+              ? 'dd/mm/yyyy'
+              : formatDate(date!),
           style: TextStyle(
             fontSize: 10,
-            color: date == null ? Colors.grey : Colors.black,
+            color: date == null
+                ? Colors.grey
+                : Colors.black,
           ),
         ),
       ),
