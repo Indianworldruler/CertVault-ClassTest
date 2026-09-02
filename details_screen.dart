@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
 import 'home_screen.dart';
 
-class DetailsScreen extends StatelessWidget {
+class DetailsScreen extends ConsumerWidget {
   final String id;
 
   const DetailsScreen({
@@ -10,261 +13,288 @@ class DetailsScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final certifications =
-        CertificationNotifier().state;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final certifications = ref.watch(certificationProvider);
 
-    CertificationTrackerItem item = certifications.first;
+    CertificationTrackerItem? certification;
 
-    for (final certification in certifications) {
-      if (certification.id == id) {
-        item = certification;
+    for (final item in certifications) {
+      if (item.id == id) {
+        certification = item;
         break;
       }
     }
 
-    return Scaffold(
-      backgroundColor: const Color(0xfff5f5f5),
-      appBar: AppBar(
-        backgroundColor: const Color(0xff7650c7),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
+    if (certification == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Certification Details'),
+          backgroundColor: Colors.deepPurple,
+          foregroundColor: Colors.white,
         ),
+        body: const Center(
+          child: Text(
+            'Certification not found.',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
         title: const Text(
           'Certification Details',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 16,
           ),
+        ),
+        backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: () {},
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Edit option selected.'),
+                ),
+              );
+            },
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          children: [
-            const SizedBox(height: 10),
-
-            _AwsLogo(),
-
-            const SizedBox(height: 14),
-
-            Text(
-              item.title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: NetworkImage(
+              'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=80',
             ),
-
-            const SizedBox(height: 5),
-
-            Text(
-              item.issuer,
-              style: const TextStyle(
-                fontSize: 11,
-                color: Colors.black87,
-              ),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.white.withValues(alpha: 0.90),
+                Colors.deepPurple.withValues(alpha: 0.16),
+              ],
             ),
-
-            const SizedBox(height: 16),
-
-            Card(
-              elevation: 2,
-              margin: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 13,
-                  vertical: 12,
-                ),
-                child: Column(
-                  children: [
-                    _DetailRow(
-                      title: 'Issue Date',
-                      value: formatDate(item.issueDate),
-                    ),
-                    const SizedBox(height: 14),
-                    _DetailRow(
-                      title: 'Expiry Date',
-                      value: formatDate(item.expiryDate),
-                    ),
-                    const SizedBox(height: 14),
-                    _DetailRow(
-                      title: 'Credential ID / URL',
-                      value: item.credentialUrl ?? 'Not provided',
-                      valueColor: const Color(0xff2864d7),
-                    ),
-                    const SizedBox(height: 14),
-                    _DetailStatusRow(
-                      status: item.renewalStatus,
-                    ),
-                    const SizedBox(height: 14),
-                    const _DetailRow(
-                      title: 'Notes',
-                      value: 'Valid for 3 years from\nissue date.',
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            SizedBox(
-              width: double.infinity,
-              height: 42,
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xff2864d7),
-                  side: const BorderSide(
-                    color: Color(0xff2864d7),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.94),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 12,
+                        offset: const Offset(0, 5),
+                        color: Colors.black.withValues(alpha: 0.12),
+                      ),
+                    ],
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 75,
+                        height: 75,
+                        decoration: BoxDecoration(
+                          color: Colors.deepPurple.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.workspace_premium,
+                          size: 42,
+                          color: Colors.deepPurple,
+                        ),
+                      ),
+                      const SizedBox(height: 15),
+                      Text(
+                        certification.title,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      Text(
+                        certification.issuer,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                onPressed: () {},
-                icon: const Icon(
-                  Icons.language,
-                  size: 17,
+
+                const SizedBox(height: 18),
+
+                _DetailTile(
+                  icon: Icons.calendar_today,
+                  title: 'Issue Date',
+                  value: formatDate(certification.issueDate),
                 ),
-                label: const Text(
-                  'Open Credential',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
+
+                _DetailTile(
+                  icon: Icons.event_busy,
+                  title: 'Expiry Date',
+                  value: formatDate(certification.expiryDate),
+                ),
+
+                _DetailTile(
+                  icon: Icons.badge,
+                  title: 'Credential ID',
+                  value: certification.credentialId.isEmpty
+                      ? 'Not provided'
+                      : certification.credentialId,
+                ),
+
+                _DetailTile(
+                  icon: Icons.autorenew,
+                  title: 'Renewal Status',
+                  value: certification.renewalStatus,
+                ),
+
+                if (certification.notes.isNotEmpty)
+                  _DetailTile(
+                    icon: Icons.notes,
+                    title: 'Notes',
+                    value: certification.notes,
+                  ),
+
+                const SizedBox(height: 18),
+
+                SizedBox(
+                  height: 54,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      final searchText =
+                          Uri.encodeComponent(certification!.title);
+
+                      final googleUrl =
+                          'https://www.google.com/search?q=$searchText';
+
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: const Text('Open Credential'),
+                            content: SelectableText(
+                              googleUrl,
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: const Text('Close'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                    icon: const Icon(Icons.open_in_new),
+                    label: const Text(
+                      'Open Credential',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+
+                const SizedBox(height: 25),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _AwsLogo extends StatelessWidget {
+class _DetailTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+
+  const _DetailTile({
+    required this.icon,
+    required this.title,
+    required this.value,
+  });
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 70,
-      height: 58,
-      decoration: const BoxDecoration(
-        color: Color(0xff2864d7),
-        shape: BoxShape.circle,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(15),
       ),
-      child: const Center(
-        child: Text(
-          'AWS',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 17,
-            fontWeight: FontWeight.bold,
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: Colors.deepPurple,
+            size: 27,
           ),
-        ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-    );
-  }
-}
-
-class _DetailRow extends StatelessWidget {
-  final String title;
-  final String value;
-  final Color? valueColor;
-
-  const _DetailRow({
-    required this.title,
-    required this.value,
-    this.valueColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Flexible(
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            style: TextStyle(
-              fontSize: 11,
-              color: valueColor ?? Colors.black87,
-              fontWeight: valueColor != null
-                  ? FontWeight.w500
-                  : FontWeight.normal,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _DetailStatusRow extends StatelessWidget {
-  final String status;
-
-  const _DetailStatusRow({
-    required this.status,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Expanded(
-          child: Text(
-            'Renewal Status',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 11,
-            vertical: 4,
-          ),
-          decoration: BoxDecoration(
-            color: const Color(0xffdff5df),
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(
-              color: const Color(0xff8aca8a),
-            ),
-          ),
-          child: Text(
-            status,
-            style: const TextStyle(
-              color: Color(0xff25852b),
-              fontSize: 9,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
